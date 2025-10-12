@@ -63,7 +63,7 @@ public class HydraulicArmController : MonoBehaviour
         {
             foreach (var joint in joints)
             {
-                joint.targetAngle = 0f;
+                joint.resetToInit();
             }
         }
     }

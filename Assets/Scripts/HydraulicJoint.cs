@@ -10,8 +10,8 @@ public class HydraulicJoint : MonoBehaviour
     public float maxPistonLength = 2.5f;
     
     [Header("Hydraulic Properties")]
-    [Tooltip("Maximum extension/retraction speed (m/s)")]
-    public float maxPistonSpeed = 0.5f;
+    [Tooltip("Maximum extension/retraction speed (m/s) - Based on 1/8\" valve, 4 bar, 17mm piston, water")]
+    public float maxPistonSpeed = 0.02f;
     
     [Tooltip("Hydraulic damping factor (higher = faster response)")]
     public float hydraulicDamping = 2.0f;
@@ -37,6 +37,7 @@ public class HydraulicJoint : MonoBehaviour
     
     [Header("Target")]
     public float targetAngle = 45f;
+    private float initialAngle;
 
     [Header("Debug")]
     [Tooltip("Show debug GUI overlay")]
@@ -64,6 +65,7 @@ public class HydraulicJoint : MonoBehaviour
     
     void Start()
     {
+        initialAngle = targetAngle;
         // Calculate triangle geometry from actual visual positions
         CalculateGeometry();
 
@@ -87,7 +89,7 @@ public class HydraulicJoint : MonoBehaviour
     void CalculateGeometry()
     {
         // For multi-link arms:
-        // - pistonBaseVisual is typically on the parent/fixed linkage (doesn't rotate with this joint)
+        // - pistonBaseVisual is on the parent/fixed linkage (doesn't rotate with this joint)
         // - pistonEndVisual is on this joint's rotating linkage (rotates with this joint)
 
         if (pistonBaseVisual != null && transform.parent != null)
@@ -250,7 +252,7 @@ public class HydraulicJoint : MonoBehaviour
     {
         // Simply read positions from the visual objects (positioned in hierarchy)
         // and update the LineRenderer to connect them
-        if (pistonLine != null && pistonBaseVisual != null && pistonEndVisual != null)
+        if (pistonLine && pistonBaseVisual && pistonEndVisual)
         {
             pistonLine.SetPosition(0, pistonBaseVisual.position);
             pistonLine.SetPosition(1, pistonEndVisual.position);
@@ -374,5 +376,10 @@ public class HydraulicJoint : MonoBehaviour
             // Reset GUI color
             GUI.color = Color.white;
         }
+    }
+
+    public void resetToInit()
+    {
+        targetAngle = initialAngle;
     }
 }
