@@ -1180,8 +1180,8 @@ MonoBehaviour:
   minPistonLength: 0.128
   maxPistonLength: 0.1657
   maxPistonSpeed: 0.02
-  hydraulicDamping: 1.5
-  pwmFrequency: 50
+  hydraulicDamping: 1
+  pwmFrequency: 1
   kP: 2
   kI: 0.1
   kD: 0.5
@@ -1330,8 +1330,8 @@ MonoBehaviour:
   minPistonLength: 0.128
   maxPistonLength: 0.1657
   maxPistonSpeed: 0.02
-  hydraulicDamping: 1.5
-  pwmFrequency: 50
+  hydraulicDamping: 1
+  pwmFrequency: 1
   kP: 2
   kI: 0.1
   kD: 0.5
@@ -1497,8 +1497,8 @@ MonoBehaviour:
   minPistonLength: 0.128
   maxPistonLength: 0.1657
   maxPistonSpeed: 0.02
-  hydraulicDamping: 1.5
-  pwmFrequency: 50
+  hydraulicDamping: 1
+  pwmFrequency: 1
   kP: 2
   kI: 0.1
   kD: 0.5
