@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 public class HydraulicArmController : MonoBehaviour
@@ -11,7 +12,11 @@ public class HydraulicArmController : MonoBehaviour
     [Header("Control")]
     public bool useKeyboardControl = true;
     public float angleAdjustSpeed = 20f;
-    
+
+    [Header("Testing")]
+    public Vector3 testPosition = new Vector3(0.3f, 0.2f, 0.3f);
+    public KeyCode testGoToKey = KeyCode.T;
+
     private int selectedJoint = 0;
     
     void Update()
@@ -66,6 +71,51 @@ public class HydraulicArmController : MonoBehaviour
                 joint.resetToInit();
             }
         }
+
+        // Test GoTo function
+        if (Input.GetKeyDown(testGoToKey))
+        {
+            Debug.Log($"Testing GoTo with position: {testPosition}");
+            MoveEndEffectorOrigin(testPosition);
+        }
+    }
+
+    void MoveTip(Vector3 position)
+    {
+        float e_magnitude = 0.07f;
+        
+    }
+    
+    void MoveEndEffectorOrigin(Vector3 position)
+    {
+        //renaming axis. Unity uses y up instead of z up. y and z are swapped.
+        float x_3 = position.x;
+        float y_3 = position.z;
+        float z_3 = position.y;
+        
+        // Horizontal plane:
+        // arm projected onto x-y plane, x+ towards you, y+ towards the right
+
+        double theta_1 = Math.Atan2(x_3, y_3);
+        // add pi if not within the wanted range
+        
+        float a_1 = 0.098f;
+        float a_2 = 0.270f;
+        float a_3 = 0.320f;
+        
+        double phi_3 = Math.Atan((z_3-a_1)/x_3);
+        
+        double r = Math.Sqrt(x_3*x_3 + (z_3 - a_1)*(z_3 - a_1));
+        
+        double phi_1 = Math.Acos((a_2*a_2 + r*r - a_3*a_3)/(2*a_2*r));
+        double phi_2 = Math.Acos((a_2*a_2 + a_3*a_3 - r*r)/(2*a_2*a_3));
+
+        double theta_2 = phi_3 + phi_1;
+        double theta_3 = phi_2 - Math.PI;
+        
+        baseObject.transform.localRotation = Quaternion.Euler(0f, (float)theta_1, 0f);
+        joints[0].targetAngle = (180f/(float)Math.PI * (float)theta_2) - 90f;
+        joints[1].targetAngle = (180f/(float)Math.PI * (float)theta_3);
     }
     
     void OnGUI()
@@ -77,6 +127,7 @@ public class HydraulicArmController : MonoBehaviour
         GUILayout.Label("Up/Down: Adjust angle");
         GUILayout.Label("Left/Right: Rotate base");
         GUILayout.Label("R: Reset all");
+        GUILayout.Label($"T: GoTo test position");
         
         GUILayout.Space(10);
         
@@ -90,5 +141,20 @@ public class HydraulicArmController : MonoBehaviour
         }
         
         GUILayout.EndArea();
+    }
+
+    void OnDrawGizmos()
+    {
+        // Draw the test target position
+        Gizmos.color = Color.green;
+        Gizmos.DrawWireSphere(testPosition, 0.05f);
+
+        // Draw coordinate axes at the target position for reference
+        Gizmos.color = Color.red;
+        Gizmos.DrawLine(testPosition, testPosition + Vector3.right * 0.03f); // X axis
+        Gizmos.color = Color.green;
+        Gizmos.DrawLine(testPosition, testPosition + Vector3.up * 0.03f); // Y axis
+        Gizmos.color = Color.blue;
+        Gizmos.DrawLine(testPosition, testPosition + Vector3.forward * 0.03f); // Z axis
     }
 }

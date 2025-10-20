@@ -169,6 +169,8 @@ public class HydraulicJoint : MonoBehaviour
 
         // Use law of cosines: c² = a² + b² - 2ab*cos(C)
         // where c is the piston length, a and b are the attachment distances
+        Debug.Log(_pistonBaseDistance +" "+ _pistonEndDistance);
+        
         float length = Mathf.Sqrt(
             _pistonBaseDistance * _pistonBaseDistance +
             _pistonEndDistance * _pistonEndDistance -
