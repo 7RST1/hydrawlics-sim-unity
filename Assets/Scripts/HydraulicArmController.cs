@@ -76,13 +76,22 @@ public class HydraulicArmController : MonoBehaviour
         if (Input.GetKeyDown(testGoToKey))
         {
             Debug.Log($"Testing GoTo with position: {testPosition}");
-            MoveEndEffectorOrigin(testPosition);
+            MoveTip(testPosition);
         }
     }
 
     void MoveTip(Vector3 position)
     {
         float e_magnitude = 0.07f;
+        // We need to remove the vector that is the end effector from the
+        // equation, and forward it to MoveEndEffectorOrigin
+        Debug.Log($"Position: {position}");
+        Vector3 P_vector = position - joints[0].transform.position;
+        P_vector.y = 0;
+        Debug.Log($"P_vector: {P_vector}");
+        Vector3 P_vector_normalized = P_vector.normalized;
+        Vector3 P_vector_normalized_scaled = P_vector_normalized * e_magnitude;
+        MoveEndEffectorOrigin(position - P_vector_normalized_scaled);
         
     }
     
@@ -96,26 +105,53 @@ public class HydraulicArmController : MonoBehaviour
         // Horizontal plane:
         // arm projected onto x-y plane, x+ towards you, y+ towards the right
 
-        double theta_1 = Math.Atan2(x_3, y_3);
+        double theta_1_rad = Math.Atan2(x_3, y_3);
         // add pi if not within the wanted range
         
         float a_1 = 0.098f;
         float a_2 = 0.270f;
         float a_3 = 0.320f;
         
-        double phi_3 = Math.Atan((z_3-a_1)/x_3);
-        
         double r = Math.Sqrt(x_3*x_3 + (z_3 - a_1)*(z_3 - a_1));
         
-        double phi_1 = Math.Acos((a_2*a_2 + r*r - a_3*a_3)/(2*a_2*r));
-        double phi_2 = Math.Acos((a_2*a_2 + a_3*a_3 - r*r)/(2*a_2*a_3));
-
-        double theta_2 = phi_3 + phi_1;
-        double theta_3 = phi_2 - Math.PI;
+        double phi_1_rad = Math.Acos((a_2*a_2 + r*r - a_3*a_3)/(2*a_2*r));
+        double phi_2_rad = Math.Acos((a_2*a_2 + a_3*a_3 - r*r)/(2*a_2*a_3));
+        double phi_3_rad = Math.Atan((z_3-a_1)/x_3);
         
-        baseObject.transform.localRotation = Quaternion.Euler(0f, (float)theta_1, 0f);
-        joints[0].targetAngle = (180f/(float)Math.PI * (float)theta_2) - 90f;
-        joints[1].targetAngle = (180f/(float)Math.PI * (float)theta_3);
+        double theta_2_rad = phi_3_rad + phi_1_rad;
+        double theta_3_rad = phi_2_rad - Math.PI;
+        
+        
+        float phi_1 = (180f/(float)Math.PI * (float)phi_1_rad);
+        float phi_2 = (180f/(float)Math.PI * (float)phi_2_rad);
+        float phi_3 = (180f/(float)Math.PI * (float)phi_3_rad);
+        
+        float theta_1 = (180f/(float)Math.PI * (float)theta_1_rad);
+        float theta_2 = (180f/(float)Math.PI * (float)theta_2_rad);
+        float theta_3 = (180f/(float)Math.PI * (float)theta_3_rad);
+        
+        baseObject.transform.localRotation = Quaternion.Euler(0f, (float)theta_1_rad, 0f);
+        joints[0].targetAngle = theta_2 - 90f;
+        joints[1].targetAngle = theta_3;
+        
+        // Calculate the angle of the end effector joint
+        joints[2].targetAngle =
+            (
+                180
+                - phi_1
+                - phi_2
+            ) - phi_3;
+        
+        Debug.Log($"Phi_1: {phi_1}");
+        Debug.Log($"Phi_2: {phi_2}");
+        Debug.Log($"Phi_3: {phi_3}");
+        
+        Debug.Log($"Theta_1: {theta_1}");
+        Debug.Log($"Theta_2: {theta_2}");
+        Debug.Log($"Theta_3: {theta_3}");
+        
+        
+        // t = 180-i
     }
     
     void OnGUI()
