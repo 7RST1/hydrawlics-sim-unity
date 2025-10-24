@@ -18,8 +18,32 @@ public class HydraulicArmController : MonoBehaviour
     public KeyCode testGoToKey = KeyCode.T;
 
     private int selectedJoint = 0;
-    
+
+    /// <summary>
+    /// Unity's Update method called once per frame. Equivalent to the Arduino's loop() function.
+    /// Handles keyboard control and would handle serial communication in hardware implementation.
+    /// </summary>
     void Update()
+    {
+        // Unity exclusive functionality! Control the joints with the keyboard
+        KeyboardControl();
+        
+        //// here, in Arduino, there would be a
+        // for (int i = 0; i < joints.Length; i++)
+        //     joints[i].update();
+        
+        //// there would also be a
+        // checkSerialBuffer();
+        //// and
+        // Vector3 position = getNextGCodeCommand();
+        // moveTip(position); // equivalent to MoveTip(position)
+        //// or something similar
+    }
+
+    /// <summary>
+    /// Provides the keyboard control functionality while Unity sim is running.
+    /// </summary>
+    void KeyboardControl()
     {
         if (!useKeyboardControl) return;
         
@@ -80,6 +104,11 @@ public class HydraulicArmController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Moves the arm tip to the specified position using inverse kinematics.
+    /// Adjusts for the end effector length and delegates to MoveEndEffectorOrigin.
+    /// </summary>
+    /// <param name="position">The target position in world space for the arm tip.</param>
     void MoveTip(Vector3 position)
     {
         float e_magnitude = 0.07f;
@@ -92,9 +121,14 @@ public class HydraulicArmController : MonoBehaviour
         Vector3 P_vector_normalized = P_vector.normalized;
         Vector3 P_vector_normalized_scaled = P_vector_normalized * e_magnitude;
         MoveEndEffectorOrigin(position - P_vector_normalized_scaled);
-        
+
     }
-    
+
+    /// <summary>
+    /// Performs inverse kinematics calculations to position the end effector origin at the specified position.
+    /// Calculates joint angles theta_1, theta_2, and theta_3 using geometric methods and applies them to the arm.
+    /// </summary>
+    /// <param name="position">The target position in world space for the end effector origin.</param>
     void MoveEndEffectorOrigin(Vector3 position)
     {
         //renaming axis. Unity uses y up instead of z up. y and z are swapped.
@@ -153,7 +187,11 @@ public class HydraulicArmController : MonoBehaviour
         
         // t = 180-i
     }
-    
+
+    /// <summary>
+    /// Renders the GUI overlay showing controller status and instructions.
+    /// Displays selected joint, control keys, and current/target angles for all joints.
+    /// </summary>
     void OnGUI()
     {
         GUILayout.BeginArea(new Rect(10, 10, 300, 500));
@@ -179,6 +217,9 @@ public class HydraulicArmController : MonoBehaviour
         GUILayout.EndArea();
     }
 
+    /// <summary>
+    /// Draws debug gizmos in the Scene view showing the test target position and coordinate axes.
+    /// </summary>
     void OnDrawGizmos()
     {
         // Draw the test target position
