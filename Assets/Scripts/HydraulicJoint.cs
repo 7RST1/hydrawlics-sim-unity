@@ -63,13 +63,17 @@ public class HydraulicJoint : MonoBehaviour
     // PID state
     private float _integralError;
     private float _previousError;
-    
+
     // PWM state
     private float _pwmAccumulator;
     private bool _valveExtend;
     private bool _valveRetract;
-    
-    void Start() // synonymous with setup()
+
+    /// <summary>
+    /// Unity's Start method called once when the script instance is being loaded. Synonymous with Arduino's Joint constructor.
+    /// Initializes joint geometry, piston length, PID state, and visualization components.
+    /// </summary>
+    void Start()
     {
         _initialAngle = targetAngle;
         // Calculate triangle geometry from actual visual positions
@@ -91,7 +95,11 @@ public class HydraulicJoint : MonoBehaviour
         if (pistonLine == null)
             pistonLine = GetComponent<LineRenderer>();
     }
-    
+
+    /// <summary>
+    /// Calculates the geometric parameters of the hydraulic piston based on visual object positions.
+    /// Determines base and end attachment distances and angles for the law of cosines calculations.
+    /// </summary>
     void CalculateGeometry()
     {
         // For multi-link arms:
@@ -120,8 +128,12 @@ public class HydraulicJoint : MonoBehaviour
         Debug.Log($"Joint {gameObject.name}: Base distance = {_pistonBaseDistance:F3}, End distance = {_pistonEndDistance:F3}");
         Debug.Log($"Joint {gameObject.name}: Base angle (parent space) = {_pistonBaseAngleInParentSpace:F1}°, End angle (local) = {_pistonEndAngle:F1}°");
     }
-    
-    void Update() // synonymous with loop()
+
+    /// <summary>
+    /// Unity's Update method called once per frame. Synonymous with update() inside Joint class in Arduino.
+    /// Updates current angle, runs PID control, simulates hydraulics, and updates visualization.
+    /// </summary>
+    void Update() // synonymous with update() inside Joint class
     {
         // Update current angle from joint rotation
         // This angle will come from the potentiometer in hardware
@@ -154,7 +166,12 @@ public class HydraulicJoint : MonoBehaviour
         // Update visualization
         UpdateVisualization();
     }
-    
+
+    /// <summary>
+    /// Calculates the required piston length for a given joint angle using the law of cosines.
+    /// </summary>
+    /// <param name="jointAngle">The target joint angle in degrees.</param>
+    /// <returns>The calculated piston length, clamped within min/max piston length limits.</returns>
     float CalculatePistonLength(float jointAngle)
     {
         // Calculate the angle in the triangle at the joint pivot
@@ -169,6 +186,8 @@ public class HydraulicJoint : MonoBehaviour
 
         // Use law of cosines: c² = a² + b² - 2ab*cos(C)
         // where c is the piston length, a and b are the attachment distances
+        //Debug.Log(_pistonBaseDistance +" "+ _pistonEndDistance);
+        
         float length = Mathf.Sqrt(
             _pistonBaseDistance * _pistonBaseDistance +
             _pistonEndDistance * _pistonEndDistance -
@@ -177,7 +196,13 @@ public class HydraulicJoint : MonoBehaviour
 
         return Mathf.Clamp(length, minPistonLength, maxPistonLength);
     }
-    
+
+    /// <summary>
+    /// Calculates the joint angle from a given piston length using the law of cosines.
+    /// Chooses between positive and negative angle solutions based on proximity to target angle.
+    /// </summary>
+    /// <param name="pistonLength">The current piston length in meters.</param>
+    /// <returns>The calculated joint angle in degrees.</returns>
     float CalculateAngleFromPiston(float pistonLength)
     {
         // Use law of cosines to get the triangle angle (always positive from Acos)
@@ -202,7 +227,12 @@ public class HydraulicJoint : MonoBehaviour
 
         return (diffPositive < diffNegative) ? jointAnglePositive : jointAngleNegative;
     }
-    
+
+    /// <summary>
+    /// Updates PWM (Pulse Width Modulation) control signals based on PID output.
+    /// Converts PID output to valve states with duty cycle clamped to realistic values (0%, 20-80%, 100%).
+    /// </summary>
+    /// <param name="pidOutput">The output from the PID controller.</param>
     void UpdatePWM(float pidOutput)
     {
         // Normalize PID output to -1 to 1 range
@@ -245,7 +275,12 @@ public class HydraulicJoint : MonoBehaviour
             _valveRetract = false;
         }
     }
-    
+
+    /// <summary>
+    /// Simulates the hydraulic system physics based on valve states.
+    /// Updates piston velocity and length with damping to simulate hydraulic inertia.
+    /// Unity-specific simulation, not relevant for actual hardware.
+    /// </summary>
     void SimulateHydraulics()
     {
         // Target velocity based on valve states
@@ -261,7 +296,12 @@ public class HydraulicJoint : MonoBehaviour
         _currentPistonLength += _pistonVelocity * Time.deltaTime;
         _currentPistonLength = Mathf.Clamp(_currentPistonLength, minPistonLength, maxPistonLength);
     }
-    
+
+    /// <summary>
+    /// Updates the joint's rotation based on the current piston length.
+    /// Calculates angle from piston length and applies it to the transform.
+    /// Unity-specific, not relevant for actual hardware.
+    /// </summary>
     void UpdateJointFromPiston()
     {
         // Calculate angle from current piston length
@@ -270,7 +310,11 @@ public class HydraulicJoint : MonoBehaviour
         // Apply to joint rotation
         transform.localRotation = Quaternion.Euler(0, 0, calculatedAngle);
     }
-    
+
+    /// <summary>
+    /// Updates the visual representation of the piston using LineRenderer.
+    /// Connects pistonBaseVisual and pistonEndVisual positions with a line.
+    /// </summary>
     void UpdateVisualization()
     {
         // Simply read positions from the visual objects (positioned in hierarchy)
@@ -281,7 +325,11 @@ public class HydraulicJoint : MonoBehaviour
             pistonLine.SetPosition(1, pistonEndVisual.position);
         }
     }
-    
+
+    /// <summary>
+    /// Draws debug gizmos in the Scene view showing piston geometry and calculated vs actual positions.
+    /// Displays the piston triangle, expected attachment points, and position errors.
+    /// </summary>
     void OnDrawGizmos()
     {
         if (pistonBaseVisual == null || pistonEndVisual == null) return;
@@ -337,6 +385,10 @@ public class HydraulicJoint : MonoBehaviour
         Gizmos.DrawWireSphere(jointPos, 0.1f);
     }
 
+    /// <summary>
+    /// Renders a debug GUI overlay near the joint showing piston distance, angles, geometry, and valve state.
+    /// Displays real-time diagnostic information for tuning and debugging.
+    /// </summary>
     void OnGUI()
     {
         if (!showDebugGUI || pistonBaseVisual == null || pistonEndVisual == null) return;
@@ -402,6 +454,10 @@ public class HydraulicJoint : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Resets the joint's target angle to its initial value set at Start.
+    /// Used to return the joint to its default configuration.
+    /// </summary>
     public void resetToInit()
     {
         targetAngle = _initialAngle;
