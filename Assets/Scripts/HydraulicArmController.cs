@@ -44,7 +44,9 @@ public class HydraulicArmController : MonoBehaviour
     [Header("G-Code")]
     public KeyCode executeGCodeKey = KeyCode.G;
     public KeyCode goToOrigoDrawingSpace = KeyCode.O;
-    public float gCodeMoveDelay = 0.5f; // Delay between G-Code movements in seconds
+    public float gCodeMoveDelay = 0.5f; // Delay between G-Code movements in seconds (deprecated - now waits for joints)
+    public float jointAngleTolerance = 2.0f; // Tolerance in degrees for considering joint at target
+    public float maxWaitTime = 10.0f; // Maximum time to wait for joints to reach target before moving on
 
     private int selectedJoint = 0;
     private bool isExecutingGCode = false;
@@ -288,14 +290,17 @@ public class HydraulicArmController : MonoBehaviour
                 - phi_1
                 - phi_2
             ) - phi_3;
+
+        if (false)
+        {
+            Debug.Log($"Phi_1: {phi_1}");
+            Debug.Log($"Phi_2: {phi_2}");
+            Debug.Log($"Phi_3: {phi_3}");
         
-        Debug.Log($"Phi_1: {phi_1}");
-        Debug.Log($"Phi_2: {phi_2}");
-        Debug.Log($"Phi_3: {phi_3}");
-        
-        Debug.Log($"Theta_1: {theta_1}");
-        Debug.Log($"Theta_2: {theta_2}");
-        Debug.Log($"Theta_3: {theta_3}");
+            Debug.Log($"Theta_1: {theta_1}");
+            Debug.Log($"Theta_2: {theta_2}");
+            Debug.Log($"Theta_3: {theta_3}");
+        }
         
         
         // t = 180-i
@@ -433,7 +438,8 @@ G00 X0.16 Y0.09 Z0.01
     }
 
     /// <summary>
-    /// Executes a G-Code string by parsing it and moving through each command sequentially
+    /// Executes a G-Code string by parsing it and moving through each command sequentially.
+    /// This will be translatable to
     /// </summary>
     /// <param name="gCodeString">The G-Code string to execute</param>
     /// <returns>IEnumerator for coroutine execution</returns>
@@ -473,12 +479,53 @@ G00 X0.16 Y0.09 Z0.01
             // For now, we'll move to all positions to visualize the path
             MoveInDrawingSpace(targetPos);
 
-            // Wait for movement to complete
-            yield return new WaitForSeconds(gCodeMoveDelay);
+            // Wait for joints to reach their targets
+            yield return StartCoroutine(WaitForJointsToReachTarget());
         }
 
         Debug.Log("G-Code execution complete");
         isExecutingGCode = false;
+    }
+
+    /// <summary>
+    /// Checks if all joints have reached their target angles within the specified tolerance.
+    /// </summary>
+    /// <returns>True if all joints are within tolerance of their target angles, false otherwise.</returns>
+    bool AreJointsAtTarget()
+    {
+        foreach (var joint in joints)
+        {
+            if (joint == null) continue;
+            if (!joint.IsAtTarget(jointAngleTolerance))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// <summary>
+    /// Waits for joints to reach their target positions within tolerance, with a timeout.
+    /// </summary>
+    /// <returns>IEnumerator for coroutine execution</returns>
+    IEnumerator WaitForJointsToReachTarget()
+    {
+        float waitTime = 0f;
+
+        while (!AreJointsAtTarget() && waitTime < maxWaitTime)
+        {
+            waitTime += Time.deltaTime;
+            yield return null;
+        }
+
+        if (waitTime >= maxWaitTime)
+        {
+            Debug.LogWarning($"Joints did not reach target within {maxWaitTime}s timeout");
+        }
+        else
+        {
+            Debug.Log($"Joints reached target in {waitTime:F2}s");
+        }
     }
 
     /// <summary>

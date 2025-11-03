@@ -744,6 +744,8 @@ MonoBehaviour:
   executeGCodeKey: 103
   goToOrigoDrawingSpace: 111
   gCodeMoveDelay: 0.5
+  jointAngleTolerance: 2
+  maxWaitTime: 10
 --- !u!4 &660799482
 Transform:
   m_ObjectHideFlags: 0
@@ -1319,7 +1321,7 @@ MonoBehaviour:
   pistonBaseVisual: {fileID: 1934698236}
   pistonEndVisual: {fileID: 1450393943}
   pistonLine: {fileID: 1140624454}
-  pumpSystem: {fileID: 0}
+  pumpSystem: {fileID: 660799483}
   targetAngle: -40
   showDebugGUI: 0
 --- !u!120 &1140624454
@@ -1470,7 +1472,7 @@ MonoBehaviour:
   pistonBaseVisual: {fileID: 870251745}
   pistonEndVisual: {fileID: 762420280}
   pistonLine: {fileID: 1168173006}
-  pumpSystem: {fileID: 0}
+  pumpSystem: {fileID: 660799483}
   targetAngle: 40
   showDebugGUI: 0
 --- !u!120 &1168173006
@@ -1638,7 +1640,7 @@ MonoBehaviour:
   pistonBaseVisual: {fileID: 515072686}
   pistonEndVisual: {fileID: 924139362}
   pistonLine: {fileID: 1180940025}
-  pumpSystem: {fileID: 0}
+  pumpSystem: {fileID: 660799483}
   targetAngle: -90
   showDebugGUI: 0
 --- !u!120 &1180940025

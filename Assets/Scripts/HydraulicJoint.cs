@@ -500,4 +500,15 @@ public class HydraulicJoint : MonoBehaviour
     {
         targetAngle = _initialAngle;
     }
+
+    /// <summary>
+    /// Checks if the joint has reached its target angle within the specified tolerance.
+    /// </summary>
+    /// <param name="tolerance">Angle tolerance in degrees</param>
+    /// <returns>True if the joint is within tolerance of its target angle</returns>
+    public bool IsAtTarget(float tolerance)
+    {
+        float angleDiff = Mathf.Abs(Mathf.DeltaAngle(_currentAngle, targetAngle));
+        return angleDiff <= tolerance;
+    }
 }
