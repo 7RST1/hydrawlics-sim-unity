@@ -12,8 +12,8 @@ public class HydraulicJoint : MonoBehaviour
     
     // This is a guess straight from AI, so will need verification and tuning
     [Header("Hydraulic Properties")]
-    [Tooltip("Maximum extension/retraction speed (m/s) - Based on 1/8\" valve, 4 bar, 17mm piston, water")]
-    public float maxPistonSpeed = 0.02f;
+    [Tooltip("Maximum extension/retraction speed (m/s) - Based on 1/8\" valve, 9 bar, 17mm piston, water")]
+    public float maxPistonSpeed = 0.035f;
     
     [Tooltip("Hydraulic damping factor (higher = faster response)")]
     public float hydraulicDamping = 1.5f;
@@ -34,12 +34,15 @@ public class HydraulicJoint : MonoBehaviour
     [Header("References")]
     [Tooltip("Piston base attachment point (doesn't rotate with joint)")]
     public Transform pistonBaseVisual;
-    
+
     [Tooltip("Piston end attachment point (rotates with joint)")]
     public Transform pistonEndVisual;
-    
+
     [Tooltip("LineRenderer to visualize piston")]
     public LineRenderer pistonLine;
+
+    [Tooltip("Hydraulic pump system (shared among all joints)")]
+    public HydraulicPumpSystem pumpSystem;
     
     [Header("Target")]
     public float targetAngle = 45f;
@@ -59,6 +62,7 @@ public class HydraulicJoint : MonoBehaviour
     private float _currentAngle;
     private float _currentPistonLength;
     private float _pistonVelocity;
+    private float _effectiveMaxSpeed; // Actual max speed considering pump flow sharing
     
     // PID state
     private float _integralError;
@@ -279,19 +283,43 @@ public class HydraulicJoint : MonoBehaviour
     /// <summary>
     /// Simulates the hydraulic system physics based on valve states.
     /// Updates piston velocity and length with damping to simulate hydraulic inertia.
+    /// Accounts for pump flow sharing when multiple joints are active.
     /// Unity-specific simulation, not relevant for actual hardware.
     /// </summary>
     void SimulateHydraulics()
     {
-        // Target velocity based on valve states
+        // Calculate effective max speed based on pump system load
+        _effectiveMaxSpeed = maxPistonSpeed;
+
+        if (pumpSystem != null)
+        {
+            // Determine flow demand (0-1 normalized)
+            float flowDemand = 0f;
+            if (_valveExtend || _valveRetract)
+            {
+                // Calculate normalized demand based on PID output
+                float error = CalculatePistonLength(targetAngle) - _currentPistonLength;
+                float normalizedDemand = Mathf.Abs(error) / (maxPistonLength - minPistonLength);
+                flowDemand = Mathf.Clamp01(normalizedDemand);
+            }
+
+            // Request flow from pump system
+            pumpSystem.RequestFlow(this, flowDemand);
+
+            // Get flow multiplier and apply to max speed
+            float flowMultiplier = pumpSystem.GetFlowMultiplier(this);
+            _effectiveMaxSpeed = maxPistonSpeed * flowMultiplier;
+        }
+
+        // Target velocity based on valve states and available flow
         float targetVelocity = 0f;
-        if (_valveExtend) targetVelocity = maxPistonSpeed;
-        else if (_valveRetract) targetVelocity = -maxPistonSpeed;
-        
+        if (_valveExtend) targetVelocity = _effectiveMaxSpeed;
+        else if (_valveRetract) targetVelocity = -_effectiveMaxSpeed;
+
         // Apply damping to simulate hydraulic inertia
-        _pistonVelocity = Mathf.Lerp(_pistonVelocity, targetVelocity, 
+        _pistonVelocity = Mathf.Lerp(_pistonVelocity, targetVelocity,
                                      hydraulicDamping * Time.deltaTime);
-        
+
         // Update piston length
         _currentPistonLength += _pistonVelocity * Time.deltaTime;
         _currentPistonLength = Mathf.Clamp(_currentPistonLength, minPistonLength, maxPistonLength);
@@ -431,6 +459,13 @@ public class HydraulicJoint : MonoBehaviour
             style.normal.textColor = Color.white;
             style.padding = new RectOffset(5, 5, 5, 5);
 
+            // Calculate flow percentage if pump system is active
+            float flowPercentage = 100f;
+            if (pumpSystem != null && _effectiveMaxSpeed > 0)
+            {
+                flowPercentage = (_effectiveMaxSpeed / maxPistonSpeed) * 100f;
+            }
+
             string debugText = $"<b>{gameObject.name}</b>\n" +
                              $"━━━━━━━━━━━━━━━━━━\n" +
                              $"<b>Piston Distance:</b>\n" +
@@ -444,7 +479,10 @@ public class HydraulicJoint : MonoBehaviour
                              $"\n<b>Geometry:</b>\n" +
                              $"  Base dist: {_pistonBaseDistance:F3} m\n" +
                              $"  End dist: {_pistonEndDistance:F3} m\n" +
-                             $"\n<b>Velocity:</b> {_pistonVelocity:F3} m/s" +
+                             $"\n<b>Speed:</b>\n" +
+                             $"  Current: {_pistonVelocity:F3} m/s\n" +
+                             $"  Max: {maxPistonSpeed:F3} m/s\n" +
+                             $"  Effective: {_effectiveMaxSpeed:F3} m/s ({flowPercentage:F0}%)\n" +
                              $"\n<b>ValveState:</b> {_valveRetract} {_valveExtend}";
 
             GUI.Label(boxRect, debugText, style);

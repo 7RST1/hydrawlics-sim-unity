@@ -711,6 +711,7 @@ GameObject:
   m_Component:
   - component: {fileID: 660799482}
   - component: {fileID: 660799481}
+  - component: {fileID: 660799483}
   m_Layer: 0
   m_Name: HydraulicArm
   m_TagString: Untagged
@@ -734,11 +735,15 @@ MonoBehaviour:
   - {fileID: 1140624453}
   - {fileID: 1180940024}
   - {fileID: 1168173005}
+  pumpSystem: {fileID: 0}
   baseObject: {fileID: 660799480}
   useKeyboardControl: 1
   angleAdjustSpeed: 20
   testPosition: {x: 0.458, y: 0.148, z: 0}
   testGoToKey: 116
+  executeGCodeKey: 103
+  goToOrigoDrawingSpace: 111
+  gCodeMoveDelay: 0.5
 --- !u!4 &660799482
 Transform:
   m_ObjectHideFlags: 0
@@ -757,6 +762,22 @@ Transform:
   - {fileID: 1140624452}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &660799483
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 660799480}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62fbc1ee805dbb3ae87ffe51dff65ef3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  maxPressure: 9
+  pumpFlowRate: 12
+  minFlowPercentage: 0.15
+  showDebugGUI: 1
 --- !u!1 &762420279
 GameObject:
   m_ObjectHideFlags: 0
@@ -1298,6 +1319,7 @@ MonoBehaviour:
   pistonBaseVisual: {fileID: 1934698236}
   pistonEndVisual: {fileID: 1450393943}
   pistonLine: {fileID: 1140624454}
+  pumpSystem: {fileID: 0}
   targetAngle: -40
   showDebugGUI: 0
 --- !u!120 &1140624454
@@ -1448,6 +1470,7 @@ MonoBehaviour:
   pistonBaseVisual: {fileID: 870251745}
   pistonEndVisual: {fileID: 762420280}
   pistonLine: {fileID: 1168173006}
+  pumpSystem: {fileID: 0}
   targetAngle: 40
   showDebugGUI: 0
 --- !u!120 &1168173006
@@ -1615,6 +1638,7 @@ MonoBehaviour:
   pistonBaseVisual: {fileID: 515072686}
   pistonEndVisual: {fileID: 924139362}
   pistonLine: {fileID: 1180940025}
+  pumpSystem: {fileID: 0}
   targetAngle: -90
   showDebugGUI: 0
 --- !u!120 &1180940025
